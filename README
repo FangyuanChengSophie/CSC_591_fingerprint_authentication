@@ -1,0 +1,237 @@
+# FingerMatch - Fingerprint Matching System
+
+A Python-based fingerprint matching system using minutiae-based features with advanced alignment and matching algorithms.
+
+
+## Project Status
+
+### Completed Features ✅
+
+- **Image Preprocessing**
+  - Histogram equalization
+  - Image binarization
+  - Ridge enhancement using Gabor filters
+  - Skeletonization
+
+- **Minutiae Extraction**
+  - Crossing number technique for minutiae detection
+  - Termination and bifurcation extraction
+  - Border minutiae removal
+  - False minutiae elimination algorithm
+  - Duplicate minutiae removal
+
+- **Feature Extraction**
+  - Position (x, y coordinates)
+  - Orientation (ridge direction, 0-180°)
+  - Type (1=termination, 3=bifurcation)
+  - Feature storage in NumPy format
+
+- **Matching Algorithms**
+  - Centroid-based alignment
+  - Hough transform for rotation detection
+  - Multi-constraint matching (position, orientation, type)
+  - Tuple profile matching
+  - Score-based evaluation
+
+- **Batch Processing**
+  - Training set enrollment
+  - Validation set identification
+  - Accuracy calculation
+
+### In Progress 🚧
+
+- Evaluation metrics
+
+## Project Architecture
+
+```
+FingerMatch-master/
+├── src/                          # Source code
+│   ├── libs/                    # Core libraries
+│   │   ├── basics.py           # Basic utilities (image loading, display, distance)
+│   │   ├── enhancing.py        # Image enhancement (Gabor filters, ridge orientation)
+│   │   ├── minutiae.py          # Minutiae extraction and processing
+│   │   ├── matching.py          # Matching algorithms
+│   │   ├── processing.py        # Image processing (binarization, thinning)
+│   │   └── edges.py             # Edge detection and matching
+│   ├── main.py                  # Main FingerMatch class
+│   ├── api.py                   # Flask API (in development)
+│   └── requirements.txt         # Dependencies
+├── notebooks/
+│   └── Notebook.ipynb           # Jupyter notebook for experimentation
+├── Project-Data/                # Dataset directory
+│   ├── train/                   # Training set (BMP format)
+│   ├── test/                    # Test set
+│   ├── validate/                # Validation set
+│   └── features/                # Extracted features (NumPy files)
+├── data/                        # Legacy dataset (TIF format)
+└── README                       # This file
+```
+
+## Core Components
+
+### 1. Image Enhancement (`libs/enhancing.py`)
+
+- **Histogram Equalization**: Improves image contrast
+- **Gabor Filtering**: Ridge enhancement and smoothing
+- **Ridge Orientation**: Extracts local ridge direction
+- **Ridge Frequency**: Calculates ridge spacing
+
+### 2. Minutiae Extraction (`libs/minutiae.py`)
+
+- **Crossing Number Technique**: Detects terminations (CN=1) and bifurcations (CN=3)
+- **Border Cleaning**: Removes minutiae near image borders
+- **False Minutiae Elimination**: Removes clustered false minutiae based on distance thresholds
+- **Duplicate Removal**: Eliminates closely spaced duplicate points
+
+### 3. Feature Extraction
+
+Each minutiae point is represented as:
+```python
+[x, y, orientation, type]
+```
+- **x, y**: Position coordinates
+- **orientation**: Ridge direction in degrees (0-180°)
+- **type**: Minutiae type (1=termination, 3=bifurcation)
+
+### 4. Matching Algorithm (`libs/matching.py`)
+
+The matching process includes:
+
+1. **Centroid Alignment**: Translates test fingerprint to align with training fingerprint centroid
+2. **Rotation Detection**: Uses Hough transform to find optimal rotation angle (-10° to +10°)
+3. **Multi-Constraint Matching**:
+   - Position matching (distance threshold: 20 pixels)
+   - Orientation matching (angle threshold: 15°)
+   - Type matching (must be identical)
+4. **Score Calculation**: Based on matched minutiae count
+
+### 5. Batch Processing
+
+- **Enrollment**: Extracts and stores features from training set
+- **Identification**: Matches validation set against enrolled features
+- **Accuracy Calculation**: Computes recognition accuracy
+
+## Installation
+
+### Prerequisites
+
+- Python 3.6+
+- Required packages (see `src/requirements.txt`)
+
+### Setup
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd FingerMatch-master
+```
+
+2. Install dependencies:
+```bash
+pip install -r src/requirements.txt
+```
+
+3. Set up the project path in Jupyter notebook (Cell 3 in `notebooks/Notebook.ipynb`)
+
+## Usage
+
+### Jupyter Notebook
+
+The main workflow is implemented in `notebooks/Notebook.ipynb`:
+
+1. **Cell 0 - Enrollment**: Extract and save features from training set
+   - Processes users 0-10
+   - Saves features to `Project-Data/features/`
+
+2. **Cell 1 - Matching**: Match validation set against enrolled features
+   - Loads enrolled features
+   - Processes validation samples
+   - Calculates accuracy
+
+### Python API
+
+```python
+from src.main import FingerMatch
+
+# Initialize
+matcher = FingerMatch()
+
+# Load training data
+matcher.loadData(path='Project-Data/train', image_format='bmp')
+
+# Train (extract minutiae)
+matcher.trainData()
+
+# Match a test fingerprint
+scores, match_result = matcher.matchFingerprint(image_test, verbose=True)
+```
+
+## Dataset Format
+
+### Training Set
+- Path: `Project-Data/train/`
+- Format: `{user_id:03d}_R0_{sample_id}.bmp`
+- Example: `000_R0_0.bmp`, `000_R0_1.bmp`, `000_R0_2.bmp`
+
+### Validation/Test Set
+- Path: `Project-Data/validate/` or `Project-Data/test/`
+- Format: `{user_id:03d}_R0_4.bmp`
+- Example: `000_R0_4.bmp`
+
+### Features
+- Path: `Project-Data/features/`
+- Format: `user_{user_id:03d}_features.npy`
+- Content: NumPy array of features `[x, y, orientation, type]`
+
+## Algorithm Details
+
+### Minutiae Extraction
+
+1. **Image Preprocessing**:
+   - Histogram equalization
+   - Binarization
+   - Skeletonization
+
+2. **Crossing Number Calculation**:
+   - 3×3 neighborhood analysis
+   - CN = 1: Termination
+   - CN = 3: Bifurcation
+
+3. **Post-processing**:
+   - Border minutiae removal
+   - Duplicate removal (distance < 10 pixels)
+   - False minutiae elimination (distance < 15 pixels, max 3 neighbors)
+
+### Matching Algorithm
+
+1. **Feature Extraction**:
+   - Extract minutiae positions, orientations, and types
+   - Store as NumPy arrays
+
+2. **Alignment**:
+   - Compute centroids of both fingerprints
+   - Translate test fingerprint to align centroids
+
+3. **Rotation Detection**:
+   - Search rotation angles from -10° to +10°
+   - For each angle, count matching minutiae
+   - Select angle with maximum matches
+
+4. **Matching Constraints**:
+   - **Position**: Euclidean distance < 20 pixels
+   - **Orientation**: Angle difference < 15°
+   - **Type**: Must be identical (1=1 or 3=3)
+
+5. **Score Calculation**:
+   ```
+   match_score = matched_count / (max_minutiae / 2)
+   ```
+
+## Performance Metrics
+
+The system evaluates matching performance using:
+- **Accuracy**: Percentage of correctly identified fingerprints
+- **Match Score**: Ratio of matched minutiae to total minutiae
+- **False Acceptance Rate (FAR)**: To be implemented
+- **False Rejection Rate (FRR)**: To be implemented
