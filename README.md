@@ -65,7 +65,7 @@ FingerMatch-master/
 │   ├── validate/                # Validation set
 │   └── features/                # Extracted features (NumPy files)
 ├── data/                        # Legacy dataset (TIF format)
-└── README                       # This file
+└── README.md                    # This file
 ```
 
 ## Core Components
@@ -235,3 +235,4 @@ The system evaluates matching performance using:
 - **Match Score**: Ratio of matched minutiae to total minutiae
 - **False Acceptance Rate (FAR)**: To be implemented
 - **False Rejection Rate (FRR)**: To be implemented
+
